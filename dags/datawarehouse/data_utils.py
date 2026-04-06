@@ -42,7 +42,7 @@ def create_table(schema):
             "Duration" VARCHAR(20) NOT NULL,
             "Video_Views" INT,
             "Likes_Count" INT,
-            "Comment_Count" INT
+            "Comments_Count" INT
             );
         """
 
