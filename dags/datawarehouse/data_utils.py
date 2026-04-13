@@ -56,7 +56,7 @@ def create_table(schema):
             "Video_Type" VARCHAR(10) NOT NULL,
             "Video_Views" INT,
             "Likes_Count" INT,
-            "Comment_Count" INT
+            "Comments_Count" INT
             );
         """
         
