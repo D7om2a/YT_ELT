@@ -24,11 +24,10 @@ def parse_duration(duration_str):
 
 def transform_data(row):
 
-    duration_td = parse_duration(row['duration'])
+    duration_value = row.get('Duration', row.get('duration'))
+    duration_td = parse_duration(duration_value)
 
     row['Duration'] = (datetime.min + duration_td).time()
 
     row["Video_Type"]  = "Shorts" if duration_td.total_seconds() <= 60 else "Normal"
-    
-
-
+    return row

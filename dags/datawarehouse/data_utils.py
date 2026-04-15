@@ -33,7 +33,7 @@ def create_table(schema):
 
     conn , cur = get_conn_cursor()
 
-    if schema == 'Staging':
+    if schema == 'staging':
         table_sql = f"""
             CREATE TABLE IF NOT EXISTS {schema}.{table} (
             "Video_ID" VARCHAR(11) PRIMARY KEY NOT NULL,
@@ -59,7 +59,6 @@ def create_table(schema):
             "Comments_Count" INT
             );
         """
-        
 
     cur.execute(table_sql)
     conn.commit()
