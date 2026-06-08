@@ -21,8 +21,8 @@ jobs:
       - name: Log in to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ vars.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push Docker image
         run: |
           docker buildx build --push \
@@ -65,8 +65,8 @@ jobs:
       - name: Log in to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ vars.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Set up Docker Compose
         run: docker compose up -d
       - name: Wait for Airflow worker
