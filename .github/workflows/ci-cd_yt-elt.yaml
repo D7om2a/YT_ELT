@@ -16,33 +16,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Get changed files
-        id: changed-files-build
-        uses: tj-actions/changed-files@v45
-        with:
-          files: |
-            Dockerfile
-            requirements.txt
-      - name: Get changed files
-        id: changed-files-build
-        uses: tj-actions/changed-files@v45
-        with:
-          files: |
-            Dockerfile
-            requirements.txt
       - name: Setup Docker Buildx
-        if: steps.changed-files-build.outputs.any_changed == 'true'
         uses: docker/setup-buildx-action@v3
       - name: Log in to DockerHub
-        if: steps.changed-files-build.outputs.any_changed == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Build and push Docker image
-        if: steps.changed-files-build.outputs.any_changed == 'true'
         run: |
           docker buildx build --push \
+            -f dockerfile \
             --tag ${{ vars.DOCKERHUB_NAMESPACE }}/${{ vars.DOCKERHUB_REPOSITORY }}:latest \
             --tag ${{ vars.DOCKERHUB_NAMESPACE }}/${{ vars.DOCKERHUB_REPOSITORY }}:${{ github.sha }} \
             .
@@ -60,15 +44,15 @@ jobs:
       ELT_DATABASE_NAME: ${{ secrets.ELT_DATABASE_NAME }}
       ELT_DATABASE_PASSWORD: ${{ secrets.ELT_DATABASE_PASSWORD }}
       ELT_DATABASE_USERNAME: ${{ secrets.ELT_DATABASE_USERNAME }}
-      FERENT_KEY: ${{ secrets.FERENT_KEY }}
+      FERNET_KEY: ${{ secrets.FERNET_KEY }}
       METADATA_DATABASE_NAME: ${{ secrets.METADATA_DATABASE_NAME }}
       METADATA_DATABASE_PASSWORD: ${{ secrets.METADATA_DATABASE_PASSWORD }}
       METADATA_DATABASE_USERNAME: ${{ secrets.METADATA_DATABASE_USERNAME }}
       POSTGRES_USER: ${{ secrets.POSTGRES_CONN_USER }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_CONN_PASSWORD }}
-      POSTGRES_CONN_HOST: ${{ secrets.POSTGRES_CONN_HOST }}
+      POSTGRES_CONN_HOST: postgres
       POSTGRES_CONN_PASSWORD: ${{ secrets.POSTGRES_CONN_PASSWORD }}
-      POSTGRES_CONN_PORT: ${{ secrets.POSTGRES_CONN_PORT }}
+      POSTGRES_CONN_PORT: 5432
       POSTGRES_CONN_USERNAME: ${{ secrets.POSTGRES_CONN_USERNAME }}
       AIRFLOW_UID: ${{ vars.AIRFLOW_UID }}
       CHANNEL_HANDLE: ${{ vars.CHANNEL_HANDLE }}
@@ -78,27 +62,27 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Get changed files
-        id: changed-files-tests
-        uses: tj-actions/changed-files@v45
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
         with:
-          files: |
-            dags/*
-            include/**
-            docker-compose.yaml
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Set up Docker Compose
-        if: steps.changed-files-tests.outputs.any_changed == 'true'
         run: docker compose up -d
+      - name: Wait for Airflow worker
+        run: |
+          timeout 600 bash -c 'until docker exec airflow-worker airflow version >/dev/null 2>&1; do
+            echo "Waiting for airflow-worker..."
+            sleep 15
+          done'
       - name: Run Unit and Integration Tests
-        if: steps.changed-files-tests.outputs.any_changed == 'true'
         run: docker exec -t airflow-worker sh -c "pytest tests/ -v"
       - name: Run End-to-End DAG Tests
-        if: steps.changed-files-tests.outputs.any_changed == 'true'
         run: |
           DAG_NAMES=("produce_json" "update_db" "data_quality")
           for DAG in "${DAG_NAMES[@]}"; do
             docker exec -t airflow-worker sh -c "airflow dags test $DAG"
           done
       - name: Tear down Docker Compose
-        if: steps.changed-files-tests.outputs.any_changed == 'true'
+        if: always()
         run: docker compose down
