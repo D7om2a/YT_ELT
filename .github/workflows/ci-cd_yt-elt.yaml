@@ -23,6 +23,13 @@ jobs:
           files: |
             Dockerfile
             requirements.txt
+      - name: Get changed files
+        id: changed-files-build
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            Dockerfile
+            requirements.txt
       - name: Setup Docker Buildx
         if: steps.changed-files-build.outputs.any_changed == 'true'
         uses: docker/setup-buildx-action@v3
